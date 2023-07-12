@@ -15,4 +15,5 @@ public class FindAllAccountsResponse {
     private int currentPage;
     private long totalItems;
     private int totalPages;
+    private String transaction;
 }

@@ -1,4 +1,4 @@
-package com.koray.atmproject.security;
+package com.koray.atmproject.config;
 
 import com.koray.atmproject.model.UserInfo;
 import org.springframework.security.core.GrantedAuthority;

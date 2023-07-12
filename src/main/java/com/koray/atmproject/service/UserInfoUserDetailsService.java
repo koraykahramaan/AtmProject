@@ -2,7 +2,7 @@ package com.koray.atmproject.service;
 
 import com.koray.atmproject.model.UserInfo;
 import com.koray.atmproject.repository.UserInfoRepository;
-import com.koray.atmproject.security.UserInfoUserDetails;
+import com.koray.atmproject.config.UserInfoUserDetails;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;

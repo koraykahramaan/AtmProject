@@ -13,8 +13,5 @@ public class AccountResponse {
     private int amount;
     private int userid;
     private String accountNumber;
-
-    public void setNull() {
-
-    }
+    private String transaction;
 }

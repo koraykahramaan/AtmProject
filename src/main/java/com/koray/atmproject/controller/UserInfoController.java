@@ -4,6 +4,7 @@ import com.koray.atmproject.dto.AuthRequest;
 import com.koray.atmproject.model.UserInfo;
 import com.koray.atmproject.service.JWTService;
 import com.koray.atmproject.service.UserInfoService;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -17,6 +18,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/api/v1/users")
+@Tag(name = "Users")
 public class UserInfoController {
 
     @Autowired

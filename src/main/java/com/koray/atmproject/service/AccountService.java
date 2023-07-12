@@ -41,6 +41,7 @@ public class AccountService {
 
     public ResponseEntity<AccountResponse> getAccountById(int id) {
         AccountResponse accountResponse = new AccountResponse();
+        accountResponse.setTransaction(TransactionTypes.GET_ACCOUNT);
 
         logger.info("Get Account By Id Started with id : " + id);
 
@@ -57,7 +58,7 @@ public class AccountService {
     public ResponseEntity<FindAllAccountsResponse> findAll(int page, int size) {
 
         FindAllAccountsResponse findAllAccountsResponse = new FindAllAccountsResponse();
-
+        findAllAccountsResponse.setTransaction(TransactionTypes.FIND_ALL);
         List<Account> accounts;
         List<AccountResponse> accountResponseList = new ArrayList<>();
 
@@ -93,7 +94,7 @@ public class AccountService {
 
     public ResponseEntity<AccountResponse> createAccount(Account account,String username) throws AlreadyHaveAccountException {
         AccountResponse accountResponse = new AccountResponse();
-
+        accountResponse.setTransaction(TransactionTypes.CREATE_ACCOUNT);
 
         logger.info("Create Account Started");
 
@@ -220,9 +221,36 @@ public class AccountService {
         return new ResponseEntity<>(depositMoneyResponse,HttpStatus.OK);
     }
 
+    public ResponseEntity<AccountResponse> deleteAccount(String username) {
+        logger.info("Delete Account started");
+
+        AccountResponse deleteAccountResponse = new AccountResponse();
+        deleteAccountResponse.setTransaction(TransactionTypes.DELETE_ACCOUNT);
+
+        Account account = getAccountFromUserName(username);
+
+        accountRepository.delete(account);
+
+        deleteAccountResponse.setAccountNumber("");
+        deleteAccountResponse.setAccountId(-1);
+        deleteAccountResponse.setAmount(-1);
+        deleteAccountResponse.setUserid(getUserIdFromUserName(username));
+
+        logger.info("Response {}",deleteAccountResponse);
+        logger.info("Delete Account completed successfully completed");
+
+        return new ResponseEntity<>(deleteAccountResponse,HttpStatus.OK);
+    }
+
     public Account getAccountFromUserName(String username) {
         UserInfo userInfo = userInfoRepository.getUserInfoByName(username).orElseThrow(() -> new UsernameNotFoundException("Username with " + username + " is not found"));
 
         return accountRepository.getAccountByUserInfo(userInfo).orElseThrow(() -> new AccountNotFoundException("Account not found"));
+    }
+
+    public int getUserIdFromUserName(String username) {
+        UserInfo userInfo = userInfoRepository.getUserInfoByName(username).orElseThrow(() -> new UsernameNotFoundException("Username with " + username + " is not found"));
+
+        return userInfo.getUserId();
     }
 }

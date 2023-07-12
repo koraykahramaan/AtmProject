@@ -4,6 +4,7 @@ import com.koray.atmproject.dto.*;
 import com.koray.atmproject.exception.AlreadyHaveAccountException;
 import com.koray.atmproject.model.Account;
 import com.koray.atmproject.service.AccountService;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -15,6 +16,7 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/v1/accounts")
+@Tag(name = "Account")
 public class AccountController {
 
     @Autowired
@@ -64,6 +66,14 @@ public class AccountController {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         UserDetails userDetails = (UserDetails) auth.getPrincipal();
         return accountService.depositMoney(userDetails.getUsername(),withdrawAndDepositMoneyRequest.getAmount());
+    }
+
+    @DeleteMapping("/delete")
+    @PreAuthorize("hasAuthority('ROLE_USER')")
+    public ResponseEntity<AccountResponse> deleteAccount() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        UserDetails userDetails = (UserDetails) auth.getPrincipal();
+        return accountService.deleteAccount(userDetails.getUsername());
     }
 
 }
