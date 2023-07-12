@@ -12,6 +12,7 @@ import com.koray.atmproject.model.UserInfo;
 import com.koray.atmproject.repository.AccountRepository;
 import com.koray.atmproject.repository.UserInfoRepository;
 import com.koray.atmproject.util.Response;
+import com.koray.atmproject.util.TransactionTypes;
 import jakarta.transaction.Transactional;
 import org.slf4j.LoggerFactory;
 import org.slf4j.Logger;
@@ -131,13 +132,11 @@ public class AccountService {
         
         
         MoneyTransactionResponse sendResponse = new MoneyTransactionResponse();
-        sendResponse.setTransactionName(Response.TRANSFER_MONEY);
+        sendResponse.setTransactionName(TransactionTypes.TRANSFER_MONEY);
 
         Account accountOfReceiver = accountRepository.getAccountByAccountNumber(accountNumber).orElseThrow(() -> new AccountwithAccountNumberNotFoundException(accountNumber));
 
-        UserInfo userInfo = userInfoRepository.getUserInfoByName(username).orElseThrow(() -> new UsernameNotFoundException("Username with "+ username + "not found"));
-
-        Account accountOfSender = accountRepository.getAccountByUserInfo(userInfo).orElseThrow(() -> new AccountNotFoundException("Account not found."));
+        Account accountOfSender = getAccountFromUserName(username);
 
         if(accountOfReceiver.getAccountNumber().equals(accountOfSender.getAccountNumber())) {
             sendResponse.setResponseStatus(Response.FAIL);
@@ -171,8 +170,59 @@ public class AccountService {
     }
 
     public ResponseEntity<MoneyTransactionResponse> withdrawMoney(String username, int amount) {
+        logger.info("Withdrawing money started");
+
+        MoneyTransactionResponse withdrawMoneyResponse = new MoneyTransactionResponse();
+        withdrawMoneyResponse.setTransactionName(TransactionTypes.WITHDRAW_MONEY);
+
+        Account account = getAccountFromUserName(username);
+
+        if(account.getAmount() < amount) {
+            withdrawMoneyResponse.setResponseStatus(Response.FAIL);
+            withdrawMoneyResponse.setCurrentAmount(account.getAmount());
+            withdrawMoneyResponse.setMessage("You do not have enough money in your account");
+            logger.info("Response {}",withdrawMoneyResponse);
+            return new ResponseEntity<>(withdrawMoneyResponse,HttpStatus.BAD_REQUEST);
+        }
+
+        account.setAmount(account.getAmount() - amount);
+        accountRepository.save(account);
+
+        withdrawMoneyResponse.setResponseStatus(Response.SUCCESS);
+        withdrawMoneyResponse.setCurrentAmount(account.getAmount());
+        withdrawMoneyResponse.setMessage("You withdrawed your money successfuly.");
+
+        logger.info("Response {}",withdrawMoneyResponse);
+        logger.info("Withdraw money finished");
+
+        return new ResponseEntity<>(withdrawMoneyResponse,HttpStatus.OK);
     }
 
     public ResponseEntity<MoneyTransactionResponse> depositMoney(String username, int amount) {
+        logger.info("Deposit money started");
+
+        MoneyTransactionResponse depositMoneyResponse = new MoneyTransactionResponse();
+        depositMoneyResponse.setTransactionName(TransactionTypes.DEPOSIT_MONEY);
+
+        Account account = getAccountFromUserName(username);
+
+        account.setAmount(account.getAmount() + amount);
+
+        accountRepository.save(account);
+
+        depositMoneyResponse.setCurrentAmount(account.getAmount());
+        depositMoneyResponse.setResponseStatus(Response.SUCCESS);
+        depositMoneyResponse.setMessage("Deposit money transaction completed successfully");
+
+        logger.info("Response {}",depositMoneyResponse);
+        logger.info("Deposit money transaction completed successfully");
+
+        return new ResponseEntity<>(depositMoneyResponse,HttpStatus.OK);
+    }
+
+    public Account getAccountFromUserName(String username) {
+        UserInfo userInfo = userInfoRepository.getUserInfoByName(username).orElseThrow(() -> new UsernameNotFoundException("Username with " + username + " is not found"));
+
+        return accountRepository.getAccountByUserInfo(userInfo).orElseThrow(() -> new AccountNotFoundException("Account not found"));
     }
 }
