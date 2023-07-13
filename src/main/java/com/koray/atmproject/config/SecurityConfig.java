@@ -35,22 +35,30 @@ public class SecurityConfig {
         return new UserInfoUserDetailsService();
 
     }
-
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-
-         http.csrf().disable()
-                .authorizeHttpRequests().requestMatchers("/api/v1/accounts","/api/v1/users","/api/v1/users/**","/api/v1/users/authenticate"
+        http
+                .csrf()
+                .disable()
+                .authorizeHttpRequests()
+                .requestMatchers("/api/v1/auth/**")
+                .permitAll()
+                .requestMatchers(antMatcher("/h2-console/**"))
+                .permitAll()
+                .requestMatchers("/api/v1/accounts","/api/v1/users","/api/v1/users/**","/api/v1/users/authenticate"
                          ,"api/v1/auth/**","/v2/api-docs","/v3/api-docs","/v3/api-docs/**","/swagger-resources"
-                         ,"/swagger-resources/**","/swagger-ui/**","/swagger-ui.html").permitAll()
-                .and().authorizeHttpRequests().requestMatchers(antMatcher("/h2-console/**")).permitAll()
-                .and().authorizeHttpRequests().requestMatchers(antMatcher("/api/v1/users/authenticate")).permitAll()
-                .and().authorizeHttpRequests().requestMatchers("/api/v1/accounts/**").authenticated()
-//                .and().authorizeHttpRequests().requestMatchers("/api/v1/accounts/transfer/**").authenticated()
-                .and().csrf().ignoringRequestMatchers(antMatcher("/h2-console/**")).ignoringRequestMatchers("/api/v1/users/new","/api/v1/users/authenticate","/api/v1/accounts/new","/api/v1/accounts/transfer","/api/v1/accounts/**","/api/v1/accounts/delete")
-                .and().headers().frameOptions().disable();
-         return http.sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS).and().authenticationProvider(authenticationProvider())
-                .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class).build();
+                         ,"/swagger-resources/**","/swagger-ui/**","/swagger-ui.html")
+                .permitAll()
+                .anyRequest()
+                .authenticated()
+                .and()
+                .sessionManagement()
+                .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+                .and()
+                .authenticationProvider(authenticationProvider())
+                .addFilterBefore(jwtAuthFilter,UsernamePasswordAuthenticationFilter.class);
+
+        return http.build();
     }
 
     @Bean
@@ -70,9 +78,4 @@ public class SecurityConfig {
     public AuthenticationManager authenticationManager(AuthenticationConfiguration configuration) throws Exception {
         return configuration.getAuthenticationManager();
     }
-//    @Bean
-//    public WebSecurityCustomizer webSecurityCustomizer() {
-//        return (web) -> web.ignoring().requestMatchers(new AntPathRequestMatcher("/h2-console","/h2-console/**"));
-//        return (web) -> web.ignoring().requestMatchers("/h2-console/**");
-//    }
 }

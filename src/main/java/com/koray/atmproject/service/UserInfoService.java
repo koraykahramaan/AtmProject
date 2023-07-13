@@ -19,7 +19,7 @@ public class UserInfoService {
     @Autowired
     private PasswordEncoder passwordEncoder;
 
-    public String addUser(UserInfo userInfo) {
+    public String register(UserInfo userInfo) {
 
         logger.info("add user method");
 

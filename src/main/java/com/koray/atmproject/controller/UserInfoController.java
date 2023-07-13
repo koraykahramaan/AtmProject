@@ -17,7 +17,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("/api/v1/users")
+@RequestMapping("/api/v1/auth")
 @Tag(name = "Users")
 public class UserInfoController {
 
@@ -30,9 +30,9 @@ public class UserInfoController {
     @Autowired
     private AuthenticationManager authManager;
 
-    @PostMapping("/new")
-    public String addNewUser(@RequestBody @Valid UserInfo userInfo) {
-        return userInfoService.addUser(userInfo);
+    @PostMapping("/register")
+    public String register(@RequestBody @Valid UserInfo userInfo) {
+        return userInfoService.register(userInfo);
     }
 
     @PostMapping("/authenticate")

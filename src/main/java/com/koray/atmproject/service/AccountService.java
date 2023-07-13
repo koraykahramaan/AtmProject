@@ -49,9 +49,10 @@ public class AccountService {
         accountResponse.setAccountId(id);
         accountResponse.setAmount(account.getAmount());
         accountResponse.setUserid(account.getUserInfo().getUserId());
+        accountResponse.setAccountNumber(account.getAccountNumber());
 
         logger.info("Response {}", accountResponse);
-        return new ResponseEntity<AccountResponse>(accountResponse, HttpStatus.OK);
+        return new ResponseEntity<>(accountResponse, HttpStatus.OK);
     }
 
 
@@ -122,7 +123,7 @@ public class AccountService {
 
         logger.info("Create Account finished successfully.");
         logger.info("Response {}", accountResponse);
-        return new ResponseEntity<AccountResponse>(accountResponse,HttpStatus.OK);
+        return new ResponseEntity<>(accountResponse, HttpStatus.OK);
     }
 
     @Transactional

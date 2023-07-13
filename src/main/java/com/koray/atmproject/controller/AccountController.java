@@ -35,7 +35,7 @@ public class AccountController {
         return accountService.findAll(page, size);
     }
 
-    @PostMapping("/new")
+    @PostMapping()
     @PreAuthorize("hasAuthority('ROLE_USER')")
     public ResponseEntity<AccountResponse> createAccount(@RequestBody Account account) throws AlreadyHaveAccountException {
 
@@ -54,7 +54,7 @@ public class AccountController {
 
     @PostMapping("/withdraw")
     @PreAuthorize("hasAuthority('ROLE_USER')")
-    public ResponseEntity<MoneyTransactionResponse> witdhrawMoney(@RequestBody WithdrawAndDepositMoneyRequest withdrawAndDepositMoneyRequest){
+    public ResponseEntity<MoneyTransactionResponse> withdrawMoney(@RequestBody WithdrawAndDepositMoneyRequest withdrawAndDepositMoneyRequest){
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         UserDetails userDetails = (UserDetails) auth.getPrincipal();
         return accountService.withdrawMoney(userDetails.getUsername(), withdrawAndDepositMoneyRequest.getAmount());
@@ -68,7 +68,7 @@ public class AccountController {
         return accountService.depositMoney(userDetails.getUsername(),withdrawAndDepositMoneyRequest.getAmount());
     }
 
-    @DeleteMapping("/delete")
+    @DeleteMapping()
     @PreAuthorize("hasAuthority('ROLE_USER')")
     public ResponseEntity<AccountResponse> deleteAccount() {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
