@@ -11,6 +11,7 @@ import com.koray.atmproject.model.Account;
 import com.koray.atmproject.model.UserInfo;
 import com.koray.atmproject.repository.AccountRepository;
 import com.koray.atmproject.repository.UserInfoRepository;
+import com.koray.atmproject.util.AccountMapper;
 import com.koray.atmproject.util.Response;
 import com.koray.atmproject.util.TransactionTypes;
 import jakarta.transaction.Transactional;
@@ -37,19 +38,17 @@ public class AccountService {
     @Autowired
     UserInfoRepository userInfoRepository;
 
+    AccountMapper accountMapper = new AccountMapper();
+
     private final Logger logger = LoggerFactory.getLogger(AccountService.class);
 
     public ResponseEntity<AccountResponse> getAccountById(int id) {
-        AccountResponse accountResponse = new AccountResponse();
-        accountResponse.setTransaction(TransactionTypes.GET_ACCOUNT);
 
         logger.info("Get Account By Id Started with id : " + id);
 
         Account account = accountRepository.findById(id).orElseThrow(() -> new AccountNotFoundException(id));
-        accountResponse.setAccountId(id);
-        accountResponse.setAmount(account.getAmount());
-        accountResponse.setUserid(account.getUserInfo().getUserId());
-        accountResponse.setAccountNumber(account.getAccountNumber());
+        AccountResponse accountResponse = accountMapper.accountToAccountResponseMapper(account);
+        accountResponse.setTransaction(TransactionTypes.GET_ACCOUNT);
 
         logger.info("Response {}", accountResponse);
         return new ResponseEntity<>(accountResponse, HttpStatus.OK);
@@ -74,11 +73,9 @@ public class AccountService {
         accounts = pageAccs.getContent();
         
         for(Account acc : accounts) {
-            AccountResponse accountResponse = new AccountResponse();
-            accountResponse.setAmount(acc.getAmount());
-            accountResponse.setAccountId(acc.getAccountId());
-            accountResponse.setUserid(acc.getUserInfo().getUserId());
-            accountResponse.setAccountNumber(acc.getAccountNumber());
+
+            AccountResponse accountResponse = accountMapper.accountToAccountResponseMapper(acc);
+            accountResponse.setTransaction(TransactionTypes.FIND_ALL);
             accountResponseList.add(accountResponse);
         }
 
@@ -94,8 +91,6 @@ public class AccountService {
     }
 
     public ResponseEntity<AccountResponse> createAccount(Account account,String username) throws AlreadyHaveAccountException {
-        AccountResponse accountResponse = new AccountResponse();
-        accountResponse.setTransaction(TransactionTypes.CREATE_ACCOUNT);
 
         logger.info("Create Account Started");
 
@@ -115,10 +110,8 @@ public class AccountService {
         }
         account.setAccountNumber(card);
         Account account1 = accountRepository.save(account);
-        accountResponse.setAccountId(account1.getAccountId());
-        accountResponse.setAmount(account1.getAmount());
-        accountResponse.setUserid(account1.getUserInfo().getUserId());
-        accountResponse.setAccountNumber(account1.getAccountNumber());
+        AccountResponse accountResponse = accountMapper.accountToAccountResponseMapper(account1);
+        accountResponse.setTransaction(TransactionTypes.CREATE_ACCOUNT);
 
 
         logger.info("Create Account finished successfully.");
@@ -141,17 +134,13 @@ public class AccountService {
         Account accountOfSender = getAccountFromUserName(username);
 
         if(accountOfReceiver.getAccountNumber().equals(accountOfSender.getAccountNumber())) {
-            sendResponse.setResponseStatus(Response.FAIL);
-            sendResponse.setCurrentAmount(accountOfSender.getAmount());
-            sendResponse.setMessage("You can not send money to your account.");
+            sendResponse = accountMapper.accountToMoneyTransactionResponseMapper(sendResponse,accountOfSender,"FAIL","You can not send money to your account.");
             logger.info("Response {}", sendResponse);
             return new ResponseEntity<>(sendResponse,HttpStatus.BAD_REQUEST);
         }
 
         if(accountOfSender.getAmount() < amount) {
-            sendResponse.setResponseStatus(Response.FAIL);
-            sendResponse.setCurrentAmount(accountOfSender.getAmount());
-            sendResponse.setMessage("You do not have enough money in your account");
+            sendResponse = accountMapper.accountToMoneyTransactionResponseMapper(sendResponse,accountOfSender,"FAIL","You do not have enough money in your account");
             logger.info("Response {}", sendResponse);
             return new ResponseEntity<>(sendResponse,HttpStatus.BAD_REQUEST);
         }
@@ -161,9 +150,7 @@ public class AccountService {
         accountRepository.save(accountOfSender);
         accountRepository.save(accountOfReceiver);
 
-        sendResponse.setCurrentAmount(accountOfSender.getAmount());
-        sendResponse.setResponseStatus(Response.SUCCESS);
-        sendResponse.setMessage("You transferred your money successfully.");
+        sendResponse = accountMapper.accountToMoneyTransactionResponseMapper(sendResponse,accountOfSender,"SUCCESS","You transferred your money successfully.");
 
         logger.info("Response {}", sendResponse);
         logger.info("Send money account finished successfully.");
@@ -180,9 +167,7 @@ public class AccountService {
         Account account = getAccountFromUserName(username);
 
         if(account.getAmount() < amount) {
-            withdrawMoneyResponse.setResponseStatus(Response.FAIL);
-            withdrawMoneyResponse.setCurrentAmount(account.getAmount());
-            withdrawMoneyResponse.setMessage("You do not have enough money in your account");
+            withdrawMoneyResponse = accountMapper.accountToMoneyTransactionResponseMapper(withdrawMoneyResponse,account,"FAIL","You do not have enough money in your account");
             logger.info("Response {}",withdrawMoneyResponse);
             return new ResponseEntity<>(withdrawMoneyResponse,HttpStatus.BAD_REQUEST);
         }
@@ -190,9 +175,7 @@ public class AccountService {
         account.setAmount(account.getAmount() - amount);
         accountRepository.save(account);
 
-        withdrawMoneyResponse.setResponseStatus(Response.SUCCESS);
-        withdrawMoneyResponse.setCurrentAmount(account.getAmount());
-        withdrawMoneyResponse.setMessage("You withdrawed your money successfuly.");
+        withdrawMoneyResponse = accountMapper.accountToMoneyTransactionResponseMapper(withdrawMoneyResponse,account,"SUCCESS","You withdrawed your money successfuly.");
 
         logger.info("Response {}",withdrawMoneyResponse);
         logger.info("Withdraw money finished");
@@ -203,18 +186,14 @@ public class AccountService {
     public ResponseEntity<MoneyTransactionResponse> depositMoney(String username, int amount) {
         logger.info("Deposit money started");
 
-        MoneyTransactionResponse depositMoneyResponse = new MoneyTransactionResponse();
-        depositMoneyResponse.setTransactionName(TransactionTypes.DEPOSIT_MONEY);
-
         Account account = getAccountFromUserName(username);
 
         account.setAmount(account.getAmount() + amount);
 
         accountRepository.save(account);
 
-        depositMoneyResponse.setCurrentAmount(account.getAmount());
-        depositMoneyResponse.setResponseStatus(Response.SUCCESS);
-        depositMoneyResponse.setMessage("Deposit money transaction completed successfully");
+        MoneyTransactionResponse depositMoneyResponse = accountMapper.accountToMoneyTransactionResponseMapper(account,"SUCCESS","Deposit money transaction completed successfully");
+        depositMoneyResponse.setTransactionName(TransactionTypes.DEPOSIT_MONEY);
 
         logger.info("Response {}",depositMoneyResponse);
         logger.info("Deposit money transaction completed successfully");
