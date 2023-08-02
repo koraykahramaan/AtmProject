@@ -3,6 +3,7 @@ package com.koray.atmproject.service;
 
 import com.koray.atmproject.dto.AccountResponse;
 import com.koray.atmproject.dto.FindAllAccountsResponse;
+import com.koray.atmproject.dto.KafkaMessage;
 import com.koray.atmproject.dto.MoneyTransactionResponse;
 import com.koray.atmproject.exception.AccountNotFoundException;
 import com.koray.atmproject.exception.AccountwithAccountNumberNotFoundException;
@@ -12,7 +13,6 @@ import com.koray.atmproject.model.UserInfo;
 import com.koray.atmproject.repository.AccountRepository;
 import com.koray.atmproject.repository.UserInfoRepository;
 import com.koray.atmproject.util.AccountMapper;
-import com.koray.atmproject.util.Response;
 import com.koray.atmproject.util.TransactionTypes;
 import jakarta.transaction.Transactional;
 import org.slf4j.LoggerFactory;
@@ -23,6 +23,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
@@ -37,6 +38,10 @@ public class AccountService {
     AccountRepository accountRepository;
     @Autowired
     UserInfoRepository userInfoRepository;
+    @Autowired
+    KafkaTemplate<String, KafkaMessage> kafkaTemplate;
+    @Autowired
+    KafkaService kafkaService;
 
     AccountMapper accountMapper = new AccountMapper();
 
@@ -78,7 +83,6 @@ public class AccountService {
             accountResponse.setTransaction(TransactionTypes.FIND_ALL);
             accountResponseList.add(accountResponse);
         }
-
 
         findAllAccountsResponse.setAccounts(accountResponseList);
         findAllAccountsResponse.setCurrentPage(pageAccs.getNumber());
@@ -124,8 +128,6 @@ public class AccountService {
 
         logger.info("Add money account started");
 
-        
-        
         MoneyTransactionResponse sendResponse = new MoneyTransactionResponse();
         sendResponse.setTransactionName(TransactionTypes.TRANSFER_MONEY);
 
@@ -149,7 +151,14 @@ public class AccountService {
         accountOfReceiver.setAmount(accountOfReceiver.getAmount() + amount);
         accountRepository.save(accountOfSender);
         accountRepository.save(accountOfReceiver);
-
+        KafkaMessage kafkaMessage = kafkaService.getKafkaMessageFromAccounts(accountOfSender,accountOfReceiver);
+        logger.info("Before kafka message sending");
+        try {
+            kafkaTemplate.send("money_transfer",kafkaMessage);
+        }
+        catch (Exception e) {
+            logger.info("Error during kafka message send.",e.getMessage());
+        }
         sendResponse = accountMapper.accountToMoneyTransactionResponseMapper(sendResponse,accountOfSender,"SUCCESS","You transferred your money successfully.");
 
         logger.info("Response {}", sendResponse);
@@ -187,9 +196,7 @@ public class AccountService {
         logger.info("Deposit money started");
 
         Account account = getAccountFromUserName(username);
-
         account.setAmount(account.getAmount() + amount);
-
         accountRepository.save(account);
 
         MoneyTransactionResponse depositMoneyResponse = accountMapper.accountToMoneyTransactionResponseMapper(account,"SUCCESS","Deposit money transaction completed successfully");
@@ -206,9 +213,7 @@ public class AccountService {
 
         AccountResponse deleteAccountResponse = new AccountResponse();
         deleteAccountResponse.setTransaction(TransactionTypes.DELETE_ACCOUNT);
-
         Account account = getAccountFromUserName(username);
-
         accountRepository.delete(account);
 
         deleteAccountResponse.setAccountNumber("");
@@ -224,13 +229,11 @@ public class AccountService {
 
     public Account getAccountFromUserName(String username) {
         UserInfo userInfo = userInfoRepository.getUserInfoByName(username).orElseThrow(() -> new UsernameNotFoundException("Username with " + username + " is not found"));
-
         return accountRepository.getAccountByUserInfo(userInfo).orElseThrow(() -> new AccountNotFoundException("Account not found"));
     }
 
     public int getUserIdFromUserName(String username) {
         UserInfo userInfo = userInfoRepository.getUserInfoByName(username).orElseThrow(() -> new UsernameNotFoundException("Username with " + username + " is not found"));
-
         return userInfo.getUserId();
     }
 }
