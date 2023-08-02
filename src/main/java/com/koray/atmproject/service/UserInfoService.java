@@ -1,7 +1,9 @@
 package com.koray.atmproject.service;
 
+import com.koray.atmproject.dto.UserInfoResponse;
 import com.koray.atmproject.model.UserInfo;
 import com.koray.atmproject.repository.UserInfoRepository;
+import com.koray.atmproject.util.UserInfoMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,15 +21,18 @@ public class UserInfoService {
     @Autowired
     private PasswordEncoder passwordEncoder;
 
-    public String register(UserInfo userInfo) {
+    UserInfoMapper userInfoMapper = new UserInfoMapper();
 
-        logger.info("add user method");
+    public UserInfoResponse register(UserInfo userInfo) {
+
+        logger.info("add user started");
 
         userInfo.setPassword(passwordEncoder.encode(userInfo.getPassword()));
         if(userInfo.getRoles().isEmpty()) {
             userInfo.setRoles("ROLE_USER");
         }
-        userInfoRepository.save(userInfo);
-        return "New user added to database";
+        UserInfo savedUser = userInfoRepository.save(userInfo);
+        logger.info("add user ended");
+        return userInfoMapper.userInfoResponseToUserInfo(savedUser);
     }
 }

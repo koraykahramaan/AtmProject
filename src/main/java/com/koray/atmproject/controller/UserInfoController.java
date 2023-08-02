@@ -1,6 +1,7 @@
 package com.koray.atmproject.controller;
 
 import com.koray.atmproject.dto.AuthRequest;
+import com.koray.atmproject.dto.UserInfoResponse;
 import com.koray.atmproject.model.UserInfo;
 import com.koray.atmproject.service.JWTService;
 import com.koray.atmproject.service.UserInfoService;
@@ -31,7 +32,7 @@ public class UserInfoController {
     private AuthenticationManager authManager;
 
     @PostMapping("/register")
-    public String register(@RequestBody @Valid UserInfo userInfo) {
+    public UserInfoResponse register(@RequestBody @Valid UserInfo userInfo) {
         return userInfoService.register(userInfo);
     }
 
