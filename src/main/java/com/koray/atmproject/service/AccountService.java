@@ -141,13 +141,13 @@ public class AccountService {
         Account accountOfSender = getAccountFromUserName(username);
 
         if(accountOfReceiver.getAccountNumber().equals(accountOfSender.getAccountNumber())) {
-            sendResponse = accountMapper.accountToMoneyTransactionResponseMapper(sendResponse,accountOfSender,"FAIL","You can not send money to your account.");
+            sendResponse = accountMapper.accountToMoneyTransactionResponseMapper(sendResponse,accountOfSender,Response.FAIL,"You can not send money to your account.");
             logger.info(logResponse, sendResponse);
             return new ResponseEntity<>(sendResponse,HttpStatus.BAD_REQUEST);
         }
 
         if(accountOfSender.getAmount() < amount) {
-            sendResponse = accountMapper.accountToMoneyTransactionResponseMapper(sendResponse,accountOfSender,"FAIL","You do not have enough money in your account");
+            sendResponse = accountMapper.accountToMoneyTransactionResponseMapper(sendResponse,accountOfSender,Response.FAIL,"You do not have enough money in your account");
             logger.info(logResponse, sendResponse);
             return new ResponseEntity<>(sendResponse,HttpStatus.BAD_REQUEST);
         }
@@ -156,7 +156,7 @@ public class AccountService {
         accountOfReceiver.setAmount(accountOfReceiver.getAmount() + amount);
         accountRepository.save(accountOfSender);
         accountRepository.save(accountOfReceiver);
-        KafkaMessage kafkaMessage = kafkaService.getKafkaMessageFromAccounts(accountOfSender,accountOfReceiver);
+        KafkaMessage kafkaMessage = kafkaService.getKafkaMessageFromAccounts(accountOfSender,accountOfReceiver,amount);
         logger.info("Before kafka message sending");
         try {
             kafkaTemplate.send("money_transfer",kafkaMessage);
@@ -181,7 +181,7 @@ public class AccountService {
         Account account = getAccountFromUserName(username);
 
         if(account.getAmount() < amount) {
-            withdrawMoneyResponse = accountMapper.accountToMoneyTransactionResponseMapper(withdrawMoneyResponse,account,"FAIL","You do not have enough money in your account");
+            withdrawMoneyResponse = accountMapper.accountToMoneyTransactionResponseMapper(withdrawMoneyResponse,account,Response.FAIL,"You do not have enough money in your account");
             logger.info(logResponse,withdrawMoneyResponse);
             return new ResponseEntity<>(withdrawMoneyResponse,HttpStatus.BAD_REQUEST);
         }

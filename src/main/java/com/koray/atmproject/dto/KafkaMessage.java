@@ -23,5 +23,6 @@ public class KafkaMessage {
     private int receiverUserId;
     private String receiverUserName;
     private String receiverUserEmail;
+    private int amount;
 
 }
