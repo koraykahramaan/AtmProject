@@ -1,7 +1,6 @@
 package com.koray.atmproject.service;
 
 import io.jsonwebtoken.Claims;
-import io.jsonwebtoken.Jwt;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.io.Decoders;
@@ -19,7 +18,7 @@ import java.util.function.Function;
 public class JWTService {
 
     public String generateToken(String username){
-        Map<String,Object> claims = new HashMap<String,Object>();
+        Map<String,Object> claims = new HashMap<>();
 
         return createToken(username, claims);
     }

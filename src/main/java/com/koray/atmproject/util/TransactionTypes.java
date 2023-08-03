@@ -9,4 +9,7 @@ public class TransactionTypes {
     public static final String CREATE_ACCOUNT = "CREATE_ACCOUNT";
     public static final String GET_ACCOUNT = "GET_ACCOUNT";
     public static final String FIND_ALL = "FIND_ALL";
+
+    private TransactionTypes() {
+    }
 }

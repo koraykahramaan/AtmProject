@@ -13,6 +13,7 @@ import com.koray.atmproject.model.UserInfo;
 import com.koray.atmproject.repository.AccountRepository;
 import com.koray.atmproject.repository.UserInfoRepository;
 import com.koray.atmproject.util.AccountMapper;
+import com.koray.atmproject.util.Response;
 import com.koray.atmproject.util.TransactionTypes;
 import jakarta.transaction.Transactional;
 import org.slf4j.LoggerFactory;
@@ -43,19 +44,23 @@ public class AccountService {
     @Autowired
     KafkaService kafkaService;
 
+
+    Random rand = new Random();
     AccountMapper accountMapper = new AccountMapper();
+
+    String logResponse = "Response : {}";
 
     private final Logger logger = LoggerFactory.getLogger(AccountService.class);
 
     public ResponseEntity<AccountResponse> getAccountById(int id) {
 
-        logger.info("Get Account By Id Started with id : " + id);
+        logger.info("Get Account By Id Started with id : {}", id);
 
         Account account = accountRepository.findById(id).orElseThrow(() -> new AccountNotFoundException(id));
         AccountResponse accountResponse = accountMapper.accountToAccountResponseMapper(account);
         accountResponse.setTransaction(TransactionTypes.GET_ACCOUNT);
 
-        logger.info("Response {}", accountResponse);
+        logger.info(logResponse, accountResponse);
         return new ResponseEntity<>(accountResponse, HttpStatus.OK);
     }
 
@@ -90,7 +95,7 @@ public class AccountService {
         findAllAccountsResponse.setTotalPages(pageAccs.getTotalPages());
 
         ResponseEntity<FindAllAccountsResponse> response = new ResponseEntity<>(findAllAccountsResponse, HttpStatus.OK);
-        logger.info("Response {}", response);
+        logger.info(logResponse, response);
         return response;
     }
 
@@ -98,7 +103,7 @@ public class AccountService {
 
         logger.info("Create Account Started");
 
-        logger.info("Username : " + username);
+        logger.info("Username : {}", username);
         UserInfo userInfo = userInfoRepository.getUserInfoByName(username).orElseThrow(() -> new UsernameNotFoundException("Username not found"));
         if (userInfo.getAccount() != null) {
             logger.info("Create Account failed, have already an account");
@@ -106,12 +111,12 @@ public class AccountService {
         }
 
         account.setUserInfo(userInfo);
-        Random rand = new Random();
-        String card = "TR";
+        StringBuilder stringBuilder = new StringBuilder("TR");
         for (int i = 0; i < 14; i++) {
             int n = rand.nextInt(10);
-            card += Integer.toString(n);
+            stringBuilder.append(n);
         }
+        String card = stringBuilder.toString();
         account.setAccountNumber(card);
         Account account1 = accountRepository.save(account);
         AccountResponse accountResponse = accountMapper.accountToAccountResponseMapper(account1);
@@ -119,7 +124,7 @@ public class AccountService {
 
 
         logger.info("Create Account finished successfully.");
-        logger.info("Response {}", accountResponse);
+        logger.info(logResponse, accountResponse); //
         return new ResponseEntity<>(accountResponse, HttpStatus.OK);
     }
 
@@ -137,13 +142,13 @@ public class AccountService {
 
         if(accountOfReceiver.getAccountNumber().equals(accountOfSender.getAccountNumber())) {
             sendResponse = accountMapper.accountToMoneyTransactionResponseMapper(sendResponse,accountOfSender,"FAIL","You can not send money to your account.");
-            logger.info("Response {}", sendResponse);
+            logger.info(logResponse, sendResponse);
             return new ResponseEntity<>(sendResponse,HttpStatus.BAD_REQUEST);
         }
 
         if(accountOfSender.getAmount() < amount) {
             sendResponse = accountMapper.accountToMoneyTransactionResponseMapper(sendResponse,accountOfSender,"FAIL","You do not have enough money in your account");
-            logger.info("Response {}", sendResponse);
+            logger.info(logResponse, sendResponse);
             return new ResponseEntity<>(sendResponse,HttpStatus.BAD_REQUEST);
         }
 
@@ -157,11 +162,11 @@ public class AccountService {
             kafkaTemplate.send("money_transfer",kafkaMessage);
         }
         catch (Exception e) {
-            logger.info("Error during kafka message send.",e.getMessage());
+            logger.info("Error during kafka message send. {}", e.getMessage());
         }
-        sendResponse = accountMapper.accountToMoneyTransactionResponseMapper(sendResponse,accountOfSender,"SUCCESS","You transferred your money successfully.");
+        sendResponse = accountMapper.accountToMoneyTransactionResponseMapper(sendResponse,accountOfSender,Response.SUCCESS,"You transferred your money successfully.");
 
-        logger.info("Response {}", sendResponse);
+        logger.info(logResponse, sendResponse);
         logger.info("Send money account finished successfully.");
 
         return new ResponseEntity<>(sendResponse,HttpStatus.OK);
@@ -177,16 +182,16 @@ public class AccountService {
 
         if(account.getAmount() < amount) {
             withdrawMoneyResponse = accountMapper.accountToMoneyTransactionResponseMapper(withdrawMoneyResponse,account,"FAIL","You do not have enough money in your account");
-            logger.info("Response {}",withdrawMoneyResponse);
+            logger.info(logResponse,withdrawMoneyResponse);
             return new ResponseEntity<>(withdrawMoneyResponse,HttpStatus.BAD_REQUEST);
         }
 
         account.setAmount(account.getAmount() - amount);
         accountRepository.save(account);
 
-        withdrawMoneyResponse = accountMapper.accountToMoneyTransactionResponseMapper(withdrawMoneyResponse,account,"SUCCESS","You withdrawed your money successfuly.");
+        withdrawMoneyResponse = accountMapper.accountToMoneyTransactionResponseMapper(withdrawMoneyResponse,account,Response.SUCCESS,"You withdrawed your money successfuly.");
 
-        logger.info("Response {}",withdrawMoneyResponse);
+        logger.info(logResponse,withdrawMoneyResponse);
         logger.info("Withdraw money finished");
 
         return new ResponseEntity<>(withdrawMoneyResponse,HttpStatus.OK);
@@ -199,10 +204,10 @@ public class AccountService {
         account.setAmount(account.getAmount() + amount);
         accountRepository.save(account);
 
-        MoneyTransactionResponse depositMoneyResponse = accountMapper.accountToMoneyTransactionResponseMapper(account,"SUCCESS","Deposit money transaction completed successfully");
+        MoneyTransactionResponse depositMoneyResponse = accountMapper.accountToMoneyTransactionResponseMapper(account, Response.SUCCESS,"Deposit money transaction completed successfully");
         depositMoneyResponse.setTransactionName(TransactionTypes.DEPOSIT_MONEY);
 
-        logger.info("Response {}",depositMoneyResponse);
+        logger.info(logResponse,depositMoneyResponse);
         logger.info("Deposit money transaction completed successfully");
 
         return new ResponseEntity<>(depositMoneyResponse,HttpStatus.OK);
@@ -221,7 +226,7 @@ public class AccountService {
         deleteAccountResponse.setAmount(-1);
         deleteAccountResponse.setUserid(getUserIdFromUserName(username));
 
-        logger.info("Response {}",deleteAccountResponse);
+        logger.info(logResponse,deleteAccountResponse);
         logger.info("Delete Account completed successfully completed");
 
         return new ResponseEntity<>(deleteAccountResponse,HttpStatus.OK);

@@ -19,7 +19,7 @@ public class AccountMapper {
         MoneyTransactionResponse moneyTransactionResponse = new MoneyTransactionResponse();
         moneyTransactionResponse.setCurrentAmount(account.getAmount());
         moneyTransactionResponse.setMessage(message);
-        if(status.equals("FAIL")) {
+        if(status.equals(Response.FAIL)) {
             moneyTransactionResponse.setResponseStatus(Response.FAIL);
         }
         else {
@@ -31,7 +31,7 @@ public class AccountMapper {
     public MoneyTransactionResponse accountToMoneyTransactionResponseMapper(MoneyTransactionResponse moneyTransactionResponse,Account account,String status,String message){
         moneyTransactionResponse.setCurrentAmount(account.getAmount());
         moneyTransactionResponse.setMessage(message);
-        if(status.equals("FAIL")) {
+        if(status.equals(Response.FAIL)) {
             moneyTransactionResponse.setResponseStatus(Response.FAIL);
         }
         else {

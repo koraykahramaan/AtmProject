@@ -10,10 +10,10 @@ public class AccountNotFoundExceptionController {
 
     @ExceptionHandler(value = AccountNotFoundException.class)
     public ResponseEntity<Object> exception(AccountNotFoundException exception) {
-        if(exception.acc_id != 0) {
-            return new ResponseEntity<Object>("Account not found with id : " + exception.acc_id, HttpStatus.NOT_FOUND);
+        if(exception.accountId != 0) {
+            return new ResponseEntity<>("Account not found with id : " + exception.accountId, HttpStatus.NOT_FOUND);
         }
-        return new ResponseEntity<Object>(exception.message, HttpStatus.NOT_FOUND);
+        return new ResponseEntity<>(exception.message, HttpStatus.NOT_FOUND);
     }
 
 
